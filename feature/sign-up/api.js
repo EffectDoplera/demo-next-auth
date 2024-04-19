@@ -5,8 +5,6 @@ import { createHash } from 'node:crypto'
 import { createSession } from '@/shared/lib/session'
 import { redirect } from 'next/navigation'
 
-const hash = createHash('sha256')
-
 export async function signup(_, formData) {
   const validatedFields = SignupFormSchema.safeParse({
     name: formData.get('name'),
@@ -22,7 +20,7 @@ export async function signup(_, formData) {
 
   const { name, email, password } = validatedFields.data
 
-  const hashedPassword = hash.update(password).digest('hex')
+  const hashedPassword = createHash('sha256').update(password).digest('hex')
 
   // TODO: add to DB
   const data = [{

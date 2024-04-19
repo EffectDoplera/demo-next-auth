@@ -1,6 +1,8 @@
 import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+
+const SEVEN_DAYS_IN_MILISECONDS = 7 * 24 * 60 * 60 * 1000
  
 const secretKey = process.env.SESSION_SECRET
 const encodedKey = new TextEncoder().encode(secretKey)
@@ -25,7 +27,7 @@ export async function decrypt(session) {
 }
 
 export async function createSession(userId) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + SEVEN_DAYS_IN_MILISECONDS)
   const session = await encrypt({ userId, expiresAt })
  
   cookies().set('session', session, {

@@ -38,3 +38,23 @@ export async function createSession(userId) {
     path: '/',
   })
 }
+
+export async function updateSession() {
+  const session = cookies().get('session').value
+  const payload = await decrypt(session)
+
+  if (!session || !payload) return null
+
+  const expires = new Date(Date.now() + SEVEN_DAYS_IN_MILISECONDS)
+  cookies().set('session', session, {
+    httpOnly: true,
+    secure: true,
+    expires,
+    sameSite: 'lax',
+    path: '/',
+  })
+}
+
+export async function deleteSession() {
+  cookies().delete('session')
+}

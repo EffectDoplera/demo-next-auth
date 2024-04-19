@@ -2,7 +2,7 @@
 
 import { SignupFormSchema } from './model'
 import { createHash } from 'node:crypto'
-import { createSession } from '@/shared/lib/session'
+import { createSession, deleteSession } from '@/shared/lib/session'
 import { redirect } from 'next/navigation'
 
 export async function signup(_, formData) {
@@ -43,4 +43,9 @@ export async function signup(_, formData) {
   await createSession(user.name)
 
   redirect('/')
+}
+
+export async function logout() {
+  deleteSession()
+  redirect('/signup')
 }

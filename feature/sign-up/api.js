@@ -2,6 +2,8 @@
 
 import { SignupFormSchema } from './model'
 import { createHash } from 'node:crypto'
+import { createSession } from '@/shared/lib/session'
+import { redirect } from 'next/navigation'
 
 const hash = createHash('sha256')
 
@@ -38,4 +40,9 @@ export async function signup(_, formData) {
       message: 'An error occurred while creating your account.',
     }
   }
+
+  // TODO: change to user.id
+  await createSession(user.name)
+
+  redirect('/')
 }

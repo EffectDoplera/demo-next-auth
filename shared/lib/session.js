@@ -1,6 +1,7 @@
 import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { kv } from '@vercel/kv'
 
 const SEVEN_DAYS_IN_MILISECONDS = 7 * 24 * 60 * 60 * 1000
  
@@ -15,9 +16,9 @@ export async function encrypt(payload) {
     .sign(encodedKey)
 }
  
-export async function decrypt(session) {
+export async function decrypt(token) {
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(token, encodedKey, {
       algorithms: ['HS256'],
     })
     return payload
@@ -26,11 +27,21 @@ export async function decrypt(session) {
   }
 }
 
+function getSession() {
+  return cookies().get('session')?.value
+}
+
 export async function createSession(userId) {
   const expiresAt = new Date(Date.now() + SEVEN_DAYS_IN_MILISECONDS)
-  const session = await encrypt({ userId, expiresAt })
- 
-  cookies().set('session', session, {
+  const sessionId = crypto.randomUUID()
+
+  const token = await encrypt({ id: sessionId, expiresAt })
+
+  await kv.set(`sessions-${userId}-${sessionId}`, {
+    token
+  })
+
+  cookies().set('session', token, {
     httpOnly: true,
     secure: true,
     expires: expiresAt,
@@ -40,13 +51,13 @@ export async function createSession(userId) {
 }
 
 export async function updateSession() {
-  const session = cookies().get('session').value
-  const payload = await decrypt(session)
+  const token = getSession()
+  const payload = await decrypt(token)
 
-  if (!session || !payload) return null
+  if (!token || !payload) return null
 
   const expires = new Date(Date.now() + SEVEN_DAYS_IN_MILISECONDS)
-  cookies().set('session', session, {
+  cookies().set('session', token, {
     httpOnly: true,
     secure: true,
     expires,

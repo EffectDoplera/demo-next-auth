@@ -1,9 +1,10 @@
 'use server'
 
 import { SignupFormSchema } from './model'
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { createSession, deleteSession } from '@/shared/lib/session'
 import { redirect } from 'next/navigation'
+import { sql } from '@vercel/postgres'
 
 export async function signup(_, formData) {
   const validatedFields = SignupFormSchema.safeParse({
@@ -22,8 +23,13 @@ export async function signup(_, formData) {
 
   const hashedPassword = createHash('sha256').update(password).digest('hex')
 
+  await sql`CREATE TABLE IF NOT EXISTS users ( id varchar(255), name varchar(255), email varchar(255), password varchar(255));`
+
+  // await sql`INSERT INTO users (id, name, email, password) SELECT id, name, email, password FROM (VALUES (${randomUUID()}, ${name}, ${email}, ${hashedPassword})) AS new_user(id, name, email, password) WHERE NOT EXIST (SELECT 1 FROM users WHERE email = new_user.email);`
+
   // TODO: add to DB
   const data = [{
+    id: randomUUID(),
     name,
     email,
     password: hashedPassword,
@@ -39,8 +45,7 @@ export async function signup(_, formData) {
     }
   }
 
-  // TODO: change to user.id
-  await createSession(user.name)
+  await createSession(user.id)
 
   redirect('/')
 }

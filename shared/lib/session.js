@@ -37,7 +37,8 @@ export async function createSession(userId) {
 
   const token = await encrypt({ id: sessionId, expiresAt })
 
-  await kv.set(`sessions-${userId}-${sessionId}`, {
+  await kv.set(`sessions-${sessionId}`, {
+    userId,
     token
   })
 
@@ -67,5 +68,11 @@ export async function updateSession() {
 }
 
 export async function deleteSession() {
+  const token = getSession()
+  const payload = await decrypt(token)
+
+  if (!token || !payload) return null
+
+  await kv.getdel(`sessions-${payload.id}`)
   cookies().delete('session')
 }

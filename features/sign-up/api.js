@@ -23,21 +23,29 @@ export async function signup(_, formData) {
 
   const hashedPassword = createHash('sha256').update(password).digest('hex')
 
-  await sql`CREATE TABLE IF NOT EXISTS users ( id varchar(255), name varchar(255), email varchar(255), password varchar(255));`
+  await sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id varchar(255) PRIMARY KEY, 
+      name varchar(255), 
+      email varchar(255) NOT NULL UNIQUE, 
+      password varchar(255)
+    )
+  ;`
 
-  // await sql`INSERT INTO users (id, name, email, password) SELECT id, name, email, password FROM (VALUES (${randomUUID()}, ${name}, ${email}, ${hashedPassword})) AS new_user(id, name, email, password) WHERE NOT EXIST (SELECT 1 FROM users WHERE email = new_user.email);`
+  await sql`
+    INSERT INTO users (id, name, email, password)
+    VALUES (${randomUUID()}, ${name}, ${email}, ${hashedPassword})
+    ON CONFLICT (email) DO NOTHING
+  ;`
 
-  // TODO: add to DB
-  const data = [{
-    id: randomUUID(),
-    name,
-    email,
-    password: hashedPassword,
-  }]
+  const {rows} = await sql`
+    SELECT id, name, email 
+    FROM users
+    WHERE email = ${email}
+    LIMIT 1
+  ;`
 
-  const [user] = data
-
-  console.log(user)
+  const [user] = rows
 
   if (!user) {
     return {
